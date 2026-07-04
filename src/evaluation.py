@@ -264,8 +264,8 @@ def save_evaluation_report(
         "",
         "## Figures",
         "",
-        "- `reports/figures/confusion_matrix.png`: Normalised confusion matrix.",
-        "- `reports/figures/roc_auc_curves_*.png`: One-vs-rest ROC curves.",
+        "- `outputs/figures/confusion_matrix.png`: Normalised confusion matrix.",
+        "- `outputs/figures/roc_auc_curves_*.png`: One-vs-rest ROC curves.",
     ]
 
     output_path = REPORTS_DIR / "evaluation_report.md"
@@ -279,11 +279,25 @@ def write_improvement_log(
 ) -> None:
     """Write an improvement log if the target accuracy was not achieved.
 
+    Does nothing if `reports/improvement_log.md` already exists: that file is
+    meant to hold a hand-written record of what was tried and why (see the
+    shipped version), and re-running this module should not silently replace
+    that analysis with a generic placeholder.
+
     Args:
         accuracy: Achieved test-set accuracy.
         attempts: Optional list of strings describing improvement attempts made.
     """
     if accuracy >= MIN_TARGET_ACCURACY:
+        return
+
+    output_path = REPORTS_DIR / "improvement_log.md"
+    if output_path.exists():
+        logger.info(
+            "Improvement log already exists at %s -- leaving the existing "
+            "analysis in place instead of overwriting it.",
+            output_path,
+        )
         return
 
     ensure_dirs()
@@ -305,7 +319,6 @@ def write_improvement_log(
     else:
         lines.append("No improvement attempts recorded yet.")
 
-    output_path = REPORTS_DIR / "improvement_log.md"
     output_path.write_text("\n".join(lines), encoding="utf-8")
     logger.info("Improvement log written to: %s", output_path)
 

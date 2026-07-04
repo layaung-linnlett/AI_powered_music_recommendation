@@ -447,7 +447,7 @@ def write_eda_summary(
         "",
         "## Figures",
         "",
-        "All figures are saved to `reports/figures/`:",
+        "All figures are saved to `outputs/figures/`:",
         "",
         "- `class_distribution.png`: Bar chart of all 114 class counts.",
         "- `feature_distributions.png`: Histograms with KDE for all numeric features.",
