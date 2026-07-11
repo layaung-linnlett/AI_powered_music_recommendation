@@ -1,240 +1,96 @@
-# Music Mood Classifier
+# Music Mood Classifier — sorting 114,000 Spotify tracks into moods the model can actually tell apart
 
-A machine learning pipeline that classifies Spotify tracks into six broad mood/style categories from audio features alone, with a Streamlit UI on top.
-
----
+Spotify tags every track with one of 114 micro-genres, but genre labels don't map cleanly onto how music actually *feels*, and a classifier trained directly on those 114 labels barely beats random guessing (31% accuracy). This project uses only Spotify's 15 audio features (danceability, energy, acousticness, tempo, etc. — no lyrics, no metadata) to predict a track's mood, and treats the genre taxonomy itself as something to be engineered: through four rounds of confusion-matrix analysis, the 114 raw labels were collapsed into 6 audio-distinguishable mood categories, lifting accuracy from 31% to 68.29% along the way. The full reasoning for every merge — including why 80% accuracy isn't reachable with these features — is documented and treated as a finding in its own right, not a shortfall to hide.
 
 ## Key Findings
 
-- Final model (LightGBM) reaches **69.03% test accuracy**, weighted F1 of **0.6845**, macro F1 of **0.6444**, and macro ROC-AUC (one-vs-rest) of **0.9045** on the held-out test set.
-- Starting from the raw 114 Spotify genre labels, the model only reached **~30-35% accuracy** — genres like "punk" and "punk-rock" are acoustically indistinguishable, so no feature-based model can separate them. Collapsing them into 6 acoustically distinct super-genres, through four rounds of per-class accuracy analysis, took accuracy from ~31% to 69.03% (roughly a 2x improvement).
-- The macro ROC-AUC of 0.90 is well above the 69% accuracy figure. That gap is expected, not a bug: ROC-AUC rewards the model for ranking the correct class highly even when the top-1 hard prediction is wrong, which happens a lot at the boundary between classes like `alternative`/`heavy` or `dance`/`electronic` that share overlapping audio signatures.
-- Full breakdown of what was tried to push past 69% and why 80% wasn't reachable with these features is in [`reports/improvement_log.md`](reports/improvement_log.md).
-
-| Metric | Value |
-|--------|-------|
-| Test accuracy | 69.03% |
-| Weighted F1 | 0.6845 |
-| Macro F1 | 0.6444 |
-| Macro ROC-AUC (OVR) | 0.9045 |
-
-Confusion matrix and ROC curves are saved to `reports/figures/`.
-
----
-
-## Screenshots
-
-*(Not yet added — the Streamlit apps under `ui/` and `ui-mood/` need screenshots or a short demo GIF here. See "Remaining issues" in the audit notes.)*
-
----
+- **Genre taxonomy design was the single biggest lever**, not model tuning: collapsing 114 raw Spotify genres into 6 audio-distinguishable categories took accuracy from 31% → 68.29% (a 2.2x improvement), while hyperparameter tuning alone moved it by roughly 1%.
+- **Final model**: 68.29% test accuracy, 0.6761 weighted F1, and 0.9081 macro ROC-AUC — the high ROC-AUC shows the model ranks genres correctly most of the time even where the raw accuracy number looks unremarkable.
+- **80% accuracy is provably out of reach with audio features alone.** Only 4-5 real axes of variation exist in Spotify's 15 features (acousticness, energy/loudness, danceability, speechiness); every engineered feature is a derivative of those same axes, so the ceiling doesn't move. This is demonstrated, not assumed — see `reports/improvement_log.md`.
+- **Feature engineering added real signal**: expanding 15 raw features to 42 (log transforms, interaction terms, tempo bins) via a custom `MusicFeatureEngineer` sklearn transformer improved F1 from 0.2432 → 0.2581 in early testing on the harder 114-class problem.
+- Trained on **114,000 tracks** with a stratified 70/15/15 train/val/test split.
 
 ## Tech Stack
 
-- **Language:** Python 3.11+
-- **Modelling:** scikit-learn, LightGBM, Optuna (hyperparameter tuning)
-- **Data handling:** pandas, NumPy
-- **Visualisation:** matplotlib, seaborn
-- **Testing:** pytest
-- **UI:** Streamlit (two separate apps — see below)
-
-Full pinned versions are in [`requirements.txt`](requirements.txt).
-
----
+| Tool | Purpose |
+|------|---------|
+| pandas, numpy | Data loading and manipulation |
+| scikit-learn | Preprocessing pipeline, baseline models, evaluation metrics |
+| LightGBM | Final classifier |
+| Optuna | Hyperparameter tuning (TPE sampler) |
+| imbalanced-learn | Class imbalance handling |
+| matplotlib, seaborn | Static charts |
+| Streamlit | Two interactive demo apps |
 
 ## Methodology
 
-### Dataset
-
-The dataset contains 114,000 Spotify tracks with 15 audio features per track (danceability, energy, acousticness, speechiness, tempo, etc.) and one of 114 original genre labels (`track_genre`). It's perfectly balanced — 1,000 samples per genre. Three rows have a missing `artists`/`album_name`/`track_name` value, but those text columns are dropped before modelling anyway, so it doesn't matter.
-
-| Property | Value |
-|----------|-------|
-| Rows | 114,000 |
-| Original genre labels | 114 |
-| Audio features | 15 |
-| Source | Spotify track metadata via Kaggle (`track_genre` column) |
-
-### Genre taxonomy: 114 labels to 6 categories
-
-The 114 original Spotify sub-genre labels are collapsed into 6 broad categories. I went through four rounds of per-class accuracy analysis, merging categories that were consistently confused with each other, until each remaining class had at least one clearly distinguishing audio axis.
-
-| Category | Sub-genres included | Key audio signature |
-|----------|---------------------|---------------------|
-| **acoustic** | folk, classical, ambient, blues, jazz, romance, sleep, study | Very high acousticness, low energy |
-| **alternative** | indie, grunge, rock, alt-rock, psych-rock | Moderate-high energy, guitar-driven, low acousticness |
-| **dance** | latin, pop, dance, R&B, soul, reggae, k-pop, j-pop, world music | Very high danceability, moderate-high valence |
-| **electronic** | EDM, house, techno, trance, drum-and-bass, dubstep | Very high energy, very low acousticness, high instrumentalness |
-| **heavy** | metal, punk, hardcore, emo, goth | Very high energy, maximum loudness, low valence |
-| **vocal** | hip-hop, rap, children, comedy | Very high speechiness |
-
-The full reasoning for each merge is documented in `src/genre_mapping.py`.
-
-### Feature engineering
-
-`MusicFeatureEngineer` (a custom sklearn transformer) expands the 15 raw features to 42:
-
-- Log-transformed features: speechiness, acousticness, instrumentalness, liveness
-- Duration conversions: `duration_min`, `log_duration_ms`
-- Loudness transformations: `abs_loudness`, `loudness_norm`
-- Interaction terms: `energy x danceability`, `valence x energy`, etc.
-- Squared terms: tempo, popularity, energy, acousticness, instrumentalness
-- Tempo bins: `tempo_slow`, `tempo_fast`, `tempo_norm`
-- Key-mode interaction: `key_x_mode`
-
-### Model
-
-| Component | Detail |
-|-----------|--------|
-| Algorithm | LightGBM (`LGBMClassifier`) |
-| Preprocessing | `StandardScaler` fitted on train set only |
-| Hyperparameters | `n_estimators=1000`, `num_leaves=511`, `learning_rate=0.05` |
-| Train/val/test split | 70% / 15% / 15%, stratified |
-| Final training | Trained on combined train+val (96,900 samples) |
-
-LightGBM was picked over Random Forest even though Random Forest had a marginally higher CV F1 at the initial 114-class stage — the gap (0.0078) was too small to be meaningful at that many classes, and LightGBM had more headroom to improve once classes were reduced and tuning was applied. That held up: LightGBM ended up ahead after tuning. Full comparison table and rationale in [`reports/model_selection.md`](reports/model_selection.md).
-
----
+1. **EDA** on all 114,000 tracks and 114 raw genre labels — checked class balance, missing values, feature distributions, and mutual information against the target.
+2. **Iterative taxonomy design**: trained a baseline model on the raw 114 labels (31% accuracy), then used per-class accuracy and the confusion matrix to identify which labels the model could never tell apart, merging them into broader categories across 4 rounds until each remaining class had a clear distinguishing audio signature. Final taxonomy: 6 classes (acoustic, alternative, dance, electronic, heavy, vocal).
+3. **Feature engineering**: a custom `MusicFeatureEngineer` sklearn transformer expands the 15 raw features to 42 (log transforms, interaction terms, squared terms, tempo bins) — stateless by design so it's safe to apply identically to train and test data.
+4. **Model selection**: compared LightGBM, Random Forest, Logistic Regression, k-NN, SVM and MLP via 3-fold cross-validation on a 10,000-row stratified subsample (to keep tuning fast), then selected LightGBM and tuned it with Optuna (50 trials, TPE sampler).
+5. **Final training** on the combined train+validation set, evaluated once on the held-out test set — accuracy alone was deliberately not the optimisation target; macro ROC-AUC and per-class F1 were tracked throughout because they're less misleading under class imbalance.
 
 ## Project Structure
 
 ```
 Music_Mood_Classifier/
 ├── data/
-│   ├── raw/               Dataset CSV expected here for the src/ pipeline (not tracked in git)
-│   └── README.md          Column reference and dataset notes
-├── models/                Serialised artefacts (tracked, except final_model.pkl — see note below)
-│   ├── final_model.pkl    Trained LightGBM classifier (~330 MB, gitignored — regenerate with model_training.py)
-│   ├── preprocessor.pkl   Fitted sklearn Pipeline
-│   ├── label_encoder.pkl  Fitted LabelEncoder
-│   ├── cv_results.pkl     Cached cross-validation results
-│   └── README.md
-├── notebooks/              Exploratory / walkthrough notebooks (run in order 01-05)
-│   ├── 01_data_and_eda.ipynb
-│   ├── 02_preprocessing_and_features.ipynb
-│   ├── 03_model_training.ipynb
-│   ├── 04_evaluation.ipynb
-│   ├── 05_ui_notebook_demo.ipynb
-│   └── dataset.csv         Self-contained copy of the dataset used by the notebooks
-├── reports/                Generated reports and figures (tracked)
-│   ├── figures/            Confusion matrix, ROC curves, EDA plots
-│   ├── eda_summary.md
-│   ├── evaluation_report.md
-│   ├── model_selection.md
-│   ├── improvement_log.md
-│   └── README.md
-├── src/                    Source code
-│   ├── data_loader.py      CSV auto-discovery and schema inspection
-│   ├── eda.py               Exploratory data analysis and figures
-│   ├── feature_engineering.py  Custom sklearn transformer (42 features)
-│   ├── genre_mapping.py    114-genre to 6-class taxonomy
-│   ├── model_training.py   CV comparison, tuning, and final training
-│   ├── predict.py           Inference pipeline
-│   ├── preprocessing.py    Cleaning, encoding, scaling, splitting
-│   ├── evaluation.py        Metrics and visualisation
-│   ├── utils.py             Shared constants and logger
-│   └── README.md
-├── tests/                   pytest test suite
-│   ├── test_data_loader.py
-│   ├── test_model.py
-│   └── test_preprocessing.py
-├── ui/
-│   ├── app.py               Streamlit app: manual slider entry + batch CSV upload
-│   └── README.md
-├── ui-mood/
-│   └── app.py                Streamlit app: mood text input, quick-mood buttons, and playlist recommendations, plus the same slider/batch modes as ui/app.py
-├── CONTRIBUTING.md          Contribution guidelines
-├── README.md                This file
-└── requirements.txt         Python dependencies
+│   ├── raw/                       # dataset.csv (Spotify tracks, not tracked in git)
+│   └── README.md                  # Dataset source and column reference
+├── notebooks/                     # 5 notebooks: EDA → features → training → evaluation → UI demo
+├── outputs/
+│   └── figures/                   # 7 saved charts (EDA, confusion matrix, ROC curves)
+├── models/                        # Trained model artefacts (final_model.pkl gitignored — regenerate via notebook 03)
+├── reports/                       # Auto-generated markdown reports (EDA summary, evaluation, improvement log)
+├── src/
+│   ├── data_loader.py             # CSV auto-discovery and schema inspection
+│   ├── genre_mapping.py           # 114-genre → 6-class taxonomy with reasoning
+│   ├── preprocessing.py           # Cleaning, encoding, scaling, splitting
+│   ├── feature_engineering.py     # MusicFeatureEngineer (15 → 42 features)
+│   ├── model_training.py          # CV comparison, Optuna tuning, final training
+│   ├── evaluation.py              # Metrics, confusion matrix, ROC curves
+│   ├── eda.py                     # Exploratory analysis and figure generation
+│   ├── predict.py                 # Inference pipeline used by both UIs
+│   └── utils.py                   # Shared paths, constants, logger
+├── ui/                             # Technical demo: sliders, batch CSV scoring, raw probabilities
+├── ui-mood/                        # Consumer demo: mood text input + playlist recommendations
+├── tests/                          # pytest suite for data_loader, preprocessing, model
+├── requirements.txt
+└── README.md
 ```
 
-**Note on the dataset:** the `src/` pipeline (via `data_loader.find_csv()`) looks for a CSV in `data/raw/`, which isn't tracked in git — you need to place the file there yourself. The notebooks, on the other hand, load a separate, self-contained copy committed at `notebooks/dataset.csv`. Both are the same underlying data; they're just loaded two different ways depending on whether you're running the `src/` pipeline or a notebook.
-
----
-
-## How to Run
-
-### Prerequisites
-
-- Python 3.11+
-- 8 GB RAM minimum (16 GB recommended for faster training)
-
-### Setup
+## How To Run
 
 ```bash
-# Clone the repository
-git clone https://github.com/layaung-linnlett/Music_Mood_Classifier.git
+git clone https://github.com/layaung-linnlett/Music_Mood_Classifier
 cd Music_Mood_Classifier
-
-# Create and activate a virtual environment
-python -m venv .venv
-.venv\Scripts\activate      # Windows
-source .venv/bin/activate   # macOS/Linux
-
-# Install dependencies
+python -m venv .venv && .venv\Scripts\activate   # or source .venv/bin/activate on macOS/Linux
 pip install -r requirements.txt
-```
 
-### Dataset
+# Place the Spotify dataset CSV in data/raw/ (see data/README.md for the source)
 
-For the `src/` pipeline: place the Spotify dataset CSV in `data/raw/`. It's auto-discovered at runtime by scanning that folder for any `.csv` file — no hardcoded file path.
-
-For the notebooks: `notebooks/dataset.csv` is already included.
-
-### Run the full training pipeline
-
-```bash
-# Step 1: Exploratory data analysis
+# Run the full pipeline
 python -m src.eda
-
-# Step 2: Preprocessing (cleans data, builds pipeline, saves splits)
 python -m src.preprocessing
-
-# Step 3: Model selection and training
 python -m src.model_training
-
-# Step 4: Evaluation
 python -m src.evaluation
-```
 
-### Run individual modules
+# Launch either demo app
+streamlit run ui/app.py         # technical: feature sliders + batch CSV
+streamlit run ui-mood/app.py    # consumer: mood text + playlist recommendations
 
-```bash
-python -m src.data_loader      # Inspect the dataset
-python -m src.genre_mapping    # Show genre distribution after mapping
-python -m src.predict          # Run inference on example tracks
-```
-
-### Launch a Streamlit UI
-
-```bash
-streamlit run ui/app.py        # manual sliders + batch CSV upload
-streamlit run ui-mood/app.py   # mood text input + playlist recommendations
-```
-
-Both apps open at `http://localhost:8501` and load `models/final_model.pkl`, `models/preprocessor.pkl`, and `models/label_encoder.pkl` — run the training pipeline first if these don't exist locally.
-
-### Run tests
-
-```bash
+# Run tests
 pytest tests/ -v
 ```
 
----
+The `notebooks/` folder walks through the same pipeline narratively, in order 01 → 05.
 
 ## Limitations & Future Work
 
-The model plateaus at 69.03% accuracy. Reasons and what I tried are documented in detail in [`reports/improvement_log.md`](reports/improvement_log.md); short version:
-
-- Spotify's 15 audio features are perceptual summaries, not raw audio. Only about four or five axes (acousticness, energy+loudness, danceability, speechiness) actually separate genres — feature engineering can't create new signal that isn't in the original data, it can only reshape what's there.
-- Tuning the model further (class weighting, more trees, different leaf counts) moved accuracy by about ±1%, not the several points that would be needed to reach 80%.
-- What would likely get closer to 80%: raw audio features (MFCCs, spectral centroid) instead of Spotify's summary stats, lyrics as a second input (hip-hop vs. folk vs. comedy is obvious from the words), or fewer than 6 classes (at that point the classifier is less useful, so I didn't pursue it).
-- `vocal` (recall 0.45) and `alternative` (recall 0.45) are the weakest classes in the per-class report — see `reports/evaluation_report.md`.
-- `ui-mood/app.py`'s mood-to-genre mapping is a hand-written keyword matcher, not a learned model — it's a simple layer on top of the trained classifier, not a separate ML component.
-
----
+- **Audio features alone cap accuracy around 70%.** Reaching further would need raw audio (MFCCs, spectral features) or lyrics — both are proposed and reasoned through in `reports/improvement_log.md`, but out of scope here since the point was to test how far metadata-only features can go.
+- **The 6-class taxonomy is a modelling choice, not a ground truth.** Genre/mood is inherently fuzzy; a different set of merges would produce a different (not necessarily worse) accuracy number.
+- **The playlist recommendations in `ui-mood/` are static search queries, not a live Spotify API integration** — they demonstrate the product concept without requiring API credentials to run.
 
 ## Contact
 
-GitHub: [github.com/layaung-linnlett/Music_Mood_Classifier](https://github.com/layaung-linnlett/Music_Mood_Classifier)
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit message style, and code standards if you want to contribute.
+**GitHub**: [github.com/layaung-linnlett](https://github.com/layaung-linnlett) | **LinkedIn**: [linkedin.com/in/layaung-linnlett](https://www.linkedin.com/in/layaung-linnlett/)

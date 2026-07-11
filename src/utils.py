@@ -13,7 +13,7 @@ PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent
 DATA_RAW_DIR: Path = PROJECT_ROOT / "data" / "raw"
 MODELS_DIR: Path = PROJECT_ROOT / "models"
 REPORTS_DIR: Path = PROJECT_ROOT / "reports"
-FIGURES_DIR: Path = REPORTS_DIR / "figures"
+FIGURES_DIR: Path = PROJECT_ROOT / "outputs" / "figures"
 SRC_DIR: Path = PROJECT_ROOT / "src"
 
 # ==== Data Constants ====

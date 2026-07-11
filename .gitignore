@@ -20,6 +20,7 @@ lib64/
 
 # ==== Virtual environments ====
 .venv/
+.venv*/
 venv/
 ENV/
 env/
@@ -56,9 +57,10 @@ htmlcov/
 CLAUDE.md
 
 # ==== Large model artefacts (regenerate by running training pipeline) ====
-# final_model.pkl is ~330 MB (LightGBM with 1000 trees). Excluded from git.
+# final_model.pkl is a large serialised LightGBM model. Excluded from git.
 # Run: python -m src.model_training   to regenerate it.
 models/final_model.pkl
-# Numpy split arrays are ~70 MB total. Excluded from git.
+# Numpy split arrays are ~40 MB total. Excluded from git.
 # Run: python -m src.preprocessing   to regenerate them.
 models/*.npy
+artifacts/
