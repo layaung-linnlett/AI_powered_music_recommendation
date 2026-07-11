@@ -93,4 +93,4 @@ The `notebooks/` folder walks through the same pipeline narratively, in order 01
 
 ## Contact
 
-**GitHub**: [github.com/your-username](https://github.com/your-username) | **LinkedIn**: [linkedin.com/in/your-profile](https://linkedin.com/in/your-profile)
+**GitHub**: [github.com/layaung-linnlett]([https://github.com/your-username](https://github.com/layaung-linnlett)) | **LinkedIn**: [linkedin.com/in/layaung-linnlett]([https://linkedin.com/in/your-profile](https://www.linkedin.com/in/layaung-linnlett/))
