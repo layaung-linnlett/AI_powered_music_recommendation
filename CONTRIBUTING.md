@@ -14,8 +14,8 @@ follow, and the process for submitting changes.
 
 ```bash
 # 1. Fork and clone the repository.
-git clone https://github.com/your-username/music-mood-classifier.git
-cd music-mood-classifier
+git clone https://github.com/layaung-linnlett/Music_Mood_Classifier.git
+cd Music_Mood_Classifier
 
 # 2. Create and activate a virtual environment.
 python -m venv .venv
