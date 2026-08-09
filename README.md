@@ -19,7 +19,7 @@ This was a **five-person group project**, submitted April 2026. This repository 
 - **`MusicFeatureEngineer`** — a custom stateless scikit-learn transformer expanding 15 raw audio features to 42 through log transforms, interaction terms, squared terms and tempo bins
 - **The Random Forest baseline**, one of six models in the cross-validation comparison
 
-**What I did not build.** The 4→6 taxonomy extension, the data leakage fix, the LightGBM model and Optuna tuning, the ROC-AUC evaluation, the exploratory analysis, the cosine-similarity recommender, and the Streamlit applications were built by other members of the team. They're documented here because the project doesn't make sense without them — not because they're mine. Full credits, by name and pipeline stage, are in [`CONTRIBUTORS.md`](CONTRIBUTORS.md).
+**What I did not build.** The 4→6 taxonomy extension, the data leakage fix, the LightGBM model and Optuna tuning, the ROC-AUC evaluation, the exploratory analysis, the cosine-similarity recommender, and the Streamlit applications were built by other members of the team. Full credits, by name and pipeline stage, are in [`CONTRIBUTORS.md`](CONTRIBUTORS.md).
 
 **What my contribution actually bought.** LightGBM feature-importance analysis confirmed engineered features among the top 25 most important — including the interaction terms `dance_x_energy`, `energy_x_not_acoustic` and `speech_x_not_acoustic`. And the taxonomy work mattered more than any modelling choice: reframing the target from 114 near-identical labels into separable classes was the single biggest driver of performance in this project. Tuning, by comparison, moved the needle very little.
 
