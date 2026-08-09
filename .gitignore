@@ -40,7 +40,9 @@ desktop.ini
 notebooks/.ipynb_checkpoints/
 
 # ==== Raw data (do not commit) ====
-data/raw/
+# Keep the directory itself so the documented layout exists on a fresh clone.
+data/raw/*
+!data/raw/.gitkeep
 
 # ==== Temporary and log files ====
 *.log

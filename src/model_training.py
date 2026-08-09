@@ -568,7 +568,13 @@ def build_tuned_model(model_name: str, best_params: Dict[str, Any]) -> Any:
         params.pop("random_state", None)
         model = MLPClassifier(random_state=RANDOM_SEED, **params)
     else:
-        raise ValueError(f"Model '{model_name}' not recognised for building.")
+        # Known model, but no Optuna search space is defined for it, so there is
+        # nothing to tune. Fall back to the untuned candidate from the
+        # comparison. Reached only when such a model wins cross-validation.
+        candidates = get_candidate_models()
+        if model_name not in candidates:
+            raise ValueError(f"Model '{model_name}' not recognised for building.")
+        model = candidates[model_name]
 
     logger.info("Built tuned model: %s", model)
     return model
@@ -756,7 +762,19 @@ if __name__ == "__main__":
     best_name = select_best_model(cv_results)
     baseline_f1 = float(cv_results[cv_results["model"] == best_name]["mean_f1_weighted"].values[0])
 
-    best_params, tuned_f1 = tune_model(best_name, X_train_sc, y_train)
+    try:
+        best_params, tuned_f1 = tune_model(best_name, X_train_sc, y_train)
+    except ValueError:
+        # Only LightGBM, Random Forest and MLP have Optuna search spaces defined.
+        # On the full dataset LightGBM wins, so this branch is not normally
+        # reached, but falling back to defaults keeps the script usable if a
+        # different model comes out on top of the comparison.
+        logger.warning(
+            "No Optuna search space for '%s'; keeping default parameters.",
+            best_name,
+        )
+        best_params, tuned_f1 = {}, baseline_f1
+
     final_model = build_tuned_model(best_name, best_params)
     final_model = train_final_model(final_model, X_train_sc, y_train)
     save_model(final_model)

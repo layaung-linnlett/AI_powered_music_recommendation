@@ -7,8 +7,9 @@ follow, and the process for submitting changes.
 
 ### Prerequisites
 
-- Python 3.11 or later
+- Python 3.12 or later (required by the pinned `numpy` and `scipy`)
 - Git
+- On macOS: `brew install libomp`, which LightGBM needs at import time
 
 ### Local Setup
 

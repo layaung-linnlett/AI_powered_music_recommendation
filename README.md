@@ -104,6 +104,8 @@ Music_Mood_Classifier/
 
 ## How To Run
 
+**Requires Python 3.12 or later** — the pinned `numpy` and `scipy` versions don't publish wheels for anything older.
+
 ```bash
 git clone https://github.com/layaung-linnlett/Music_Mood_Classifier
 cd Music_Mood_Classifier
@@ -115,14 +117,16 @@ source .venv/bin/activate          # macOS/Linux
 pip install -r requirements.txt
 ```
 
+On macOS, LightGBM also needs OpenMP, which isn't bundled with the wheel: `brew install libomp`.
+
 Place the Spotify Tracks Dataset CSV in `data/raw/` — see `data/README.md` for the source and expected schema.
 
 ```bash
-# Run the full pipeline
-python -m src.eda
-python -m src.preprocessing
-python -m src.model_training
-python -m src.evaluation
+# Run the pipeline in order
+python -m src.eda              # figures → outputs/figures/
+python -m src.preprocessing    # fits and saves models/preprocessor.pkl
+python -m src.model_training   # CV comparison, tuning → models/final_model.pkl
+python -m src.evaluation       # metrics → reports/evaluation_report.md
 
 # Launch either demo app
 streamlit run ui/app.py
@@ -131,6 +135,8 @@ streamlit run ui-mood/app.py
 # Run tests
 pytest tests/ -v
 ```
+
+The test suite exercises the real pipeline, so tests that need the dataset or a trained model skip with an explanatory reason until both are present. On a fresh clone you'll see 5 passed and 36 skipped; once the dataset is in place and `src.model_training` has run, all 41 execute.
 
 ---
 
