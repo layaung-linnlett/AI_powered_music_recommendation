@@ -33,7 +33,7 @@ With the plan to reduce classes and tune properly, the expected ceiling was
 higher for LightGBM.
 
 That judgment held up. After reducing to 6 classes and tuning, LightGBM
-reached 69.03% test accuracy. Random Forest at equivalent depth tends to
+reached 68.29% test accuracy. Random Forest at equivalent depth tends to
 plateau several points lower on this kind of tabular problem.
 
 ### Why Others Were Not Selected

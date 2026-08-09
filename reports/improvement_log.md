@@ -1,6 +1,6 @@
 # Improvement Log
 
-The final model sits at **69.03%** accuracy, below the 80% target. This log
+The final model sits at **68.29%** accuracy, below the 80% target. This log
 tracks what I tried, what worked, and why I don't think 80% is reachable with
 these specific features.
 
@@ -14,7 +14,7 @@ these specific features.
 | 2 | 22 super-genres | LightGBM 500 trees | 50.76% | Genre taxonomy mapping |
 | 3 | 15 super-genres | LightGBM 1000 trees | 56.42% | 7 targeted merges |
 | 4 | 9 super-genres | LightGBM 1000 trees | 62.26% | 5 additional merges |
-| 5 | 6 super-genres | LightGBM 1000 trees | **69.03%** | Merged all danceable classes |
+| 5 | 6 super-genres | LightGBM 1000 trees | **68.29%** | Merged all danceable classes |
 
 Roughly a 2x improvement over the baseline.
 
@@ -44,7 +44,7 @@ I also tried tuning the model directly but hit the same wall:
 - `num_leaves=511` vs `num_leaves=255`: about 1% gain
 
 LightGBM with 1000 trees and 511 leaves is already very powerful for tabular
-data. The plateau at 69% is a data problem, not a model problem.
+data. The plateau at 68.29% is a data problem, not a model problem.
 
 ---
 
@@ -83,7 +83,7 @@ dataset and were mostly just confused with each other. Merging them into one
 "dance" class eliminated that confusion entirely. Hip-hop and children both
 have high speechiness so they became "vocal".
 
-Result: 62.26% to 69.03%.
+Result: 62.26% to 68.29%.
 
 ---
 
@@ -99,6 +99,6 @@ Result: 62.26% to 69.03%.
    and vocal, 80% is probably achievable, but at that point the classifier
    isn't very useful.
 
-The macro ROC-AUC is **0.9045**, which shows the model does rank the genres
+The macro ROC-AUC is **0.9081**, which shows the model does rank the genres
 correctly most of the time. The accuracy gap is about where the class
 boundaries overlap, not about the model failing to learn anything useful.
