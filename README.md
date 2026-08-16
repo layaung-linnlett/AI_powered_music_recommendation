@@ -25,7 +25,7 @@ This was a **five-person group project**, submitted April 2026. This repository 
 
 ---
 
-## Results
+## Key Findings
 
 | Metric | Value |
 |---|---|
@@ -39,6 +39,24 @@ The gap between accuracy and ROC-AUC is the interesting part. ROC-AUC is thresho
 **Per-class recall** shows where the boundaries blur: `dance` (0.81) and `electronic` (0.72) separate cleanly, while `alternative` (0.42, F1 0.49) and `vocal` (0.45) overlap heavily with their neighbours. `alternative` shares energy characteristics with both acoustic and dance; `vocal` overlaps with dance on speechiness. `vocal` is the interesting case — precision is high (0.74) but recall is low, so when the model calls something `vocal` it is usually right, it just misses more than half of them.
 
 **Just under 70% is the ceiling here, and that's a finding rather than a shortfall.** Spotify's 15 features contain only 4–5 genuine axes of variation (acousticness, energy/loudness, danceability, speechiness). Every engineered feature is a derivative of those same axes, so no amount of feature work moves the ceiling. Getting past it would need raw audio (MFCCs, spectral features) or lyrics.
+
+---
+
+## Screenshots
+
+**ROC curves, one per mood class.** The `dance` and `electronic` curves sit well above the rest; `alternative` is the flattest, which is the same story the per-class recall tells.
+
+![ROC AUC curves by class](outputs/figures/roc_auc_curves_01.png)
+
+**Confusion matrix.** The bright diagonal is `dance`; the `alternative` row is where most of the error lives.
+
+![Confusion matrix](outputs/figures/confusion_matrix.png)
+
+**Class distribution after the 114 → 6 taxonomy collapse.** The raw dataset is perfectly balanced at 1,000 tracks per genre; collapsing it is what creates the imbalance.
+
+![Class distribution](outputs/figures/class_distribution.png)
+
+The EDA figures (feature distributions, correlation heatmap, pairplot, missing values) are in `outputs/figures/`.
 
 ---
 
@@ -140,12 +158,20 @@ The test suite exercises the real pipeline, so tests that need the dataset or a 
 
 ---
 
-## Limitations
+## Limitations & Future Work
+
+**Limitations**
 
 - **Audio features cap accuracy around 70%.** Lyrics (e.g. BERT embeddings) or raw audio would be needed to go further.
 - **The 6-class taxonomy is a modelling choice, not ground truth.** Genre and mood are fuzzy; a different set of merges would give a different, not necessarily worse, result.
 - **Class imbalance after mapping** — `dance` dominates, which is why weighted F1 sits well below ROC-AUC.
 - **No user feedback loop** — recommendation quality can't improve without interaction data.
+
+**Future work**
+
+- Add MFCCs or spectral features from raw audio, which is the only route past the ~70% ceiling.
+- Test the taxonomy against human mood labels rather than treating the 6 classes as correct by construction.
+- Collect interaction data from the recommender so its output can be evaluated rather than just inspected.
 
 ---
 
@@ -153,4 +179,6 @@ The test suite exercises the real pipeline, so tests that need the dataset or a 
 
 Dataset: Spotify Tracks Dataset (Pandya, Kaggle). Built for UFCE3P-30-3, Essentials and Applications of Artificial Intelligence, UWE Bristol — module leaders Dr Mahmoud Elbattah and Dr Sondess Missaoui.
 
-**Contact:** [GitHub](https://github.com/layaung-linnlett) · [LinkedIn](https://www.linkedin.com/in/layaung-linnlett/)
+## Contact
+
+**La Yaung Linn Lett** — [github.com/layaung-linnlett](https://github.com/layaung-linnlett) · [linkedin.com/in/layaung-linnlett](https://www.linkedin.com/in/layaung-linnlett/) · layaunglinnlett1@gmail.com

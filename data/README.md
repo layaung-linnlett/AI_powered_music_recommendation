@@ -59,7 +59,7 @@ All numeric feature columns have zero missing values.
 
 ## Notes
 
-- Identifer and text columns (`track_id`, `artists`, `album_name`, `track_name`) are
+- Identifier and text columns (`track_id`, `artists`, `album_name`, `track_name`) are
   dropped during preprocessing.
 - The `explicit` boolean is cast to integer (0 or 1) before scaling.
 - Outliers in `duration_ms`, `loudness`, `speechiness`, `instrumentalness`, and

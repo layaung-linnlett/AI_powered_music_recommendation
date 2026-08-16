@@ -66,3 +66,5 @@ models/final_model.pkl
 # Run: python -m src.preprocessing   to regenerate them.
 models/*.npy
 artifacts/
+
+# Files over ~50 MB should not be committed - use Git LFS or a download step instead.
