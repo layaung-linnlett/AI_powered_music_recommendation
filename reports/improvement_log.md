@@ -1,5 +1,23 @@
 # Improvement Log
 
+> **Two notes before reading, added during a later review of this repository.**
+>
+> **Attribution.** This log is written in the first person. It is not a record of
+> who did what — [`CONTRIBUTORS.md`](../CONTRIBUTORS.md) is the authority on that,
+> and it should be read alongside this file. The two documents describe the
+> taxonomy work differently and the difference is unresolved: `CONTRIBUTORS.md`
+> records an initial 114-to-4 collapse that was later extended to 6 classes by a
+> second team member, while the rounds below run 114 to 22 to 15 to 9 to 6 with no
+> 4-class stage. Do not treat either account as settled.
+>
+> **Measurement basis.** The Round 1 figure of roughly 31% below is not the same
+> measurement as the 114-class accuracies reported in
+> [`model_selection.md`](model_selection.md) (LightGBM 0.2483, Random Forest
+> 0.2642), which are *mean 3-fold cross-validation* scores on a 10,000-row
+> stratified subsample. The basis of the ~31% figure is not recorded. Treat the
+> two as separate measurements rather than a contradiction, and do not quote
+> either as "the baseline" without saying which one it is.
+
 The final model sits at **68.29%** accuracy, below the 80% target. This log
 tracks what I tried, what worked, and why I don't think 80% is reachable with
 these specific features.

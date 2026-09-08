@@ -2,8 +2,16 @@
 
 ## Candidate Models Evaluated
 
-Each model was evaluated with 5-fold stratified cross-validation on the
-training set. Results are sorted by mean weighted F1 score.
+Each model was evaluated with 3-fold stratified cross-validation on a
+10,000-row stratified subsample of the training set (`CV_FOLDS_COMPARISON = 3`,
+`CV_SUBSAMPLE_SIZE = 10000` in `src/model_training.py`; the subsample keeps the
+comparison inside 8 GB of RAM). Results are sorted by mean weighted F1 score.
+
+**Measurement basis.** The accuracy figures in the table below are *mean
+cross-validation accuracy at the 114-class stage, on that 10,000-row
+subsample*. They are not test-set scores, and they are not the same
+measurement as the Round 1 figure in `improvement_log.md` — see the note at
+the top of that file before comparing the two.
 
 | Model | Mean CV Accuracy | Mean Weighted F1 | Training Time (s) |
 |-------|-----------------|------------------|-------------------|
